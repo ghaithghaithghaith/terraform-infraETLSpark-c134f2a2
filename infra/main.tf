@@ -1,8 +1,7 @@
-
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Remote backend â€” state stored in S3, locking via DynamoDB
 # (Provisioned by the bootstrap/ folder)
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 terraform {
   backend "s3" {
     bucket         = "tfstate-infraetlspark-nphvnhdq"
@@ -225,4 +224,101 @@ resource "aws_glue_job" "etl_job" {
     aws_s3_object.test_glue_script,
     aws_iam_role_policy.glue_job_inline
   ]
+}
+
+resource "aws_db_subnet_group" "rds" {
+  name       = "${var.rds_subnet_group_base_name}-${local.random_suffix}"
+  subnet_ids = [aws_subnet.rds_a.id, aws_subnet.rds_b.id]
+
+  tags = {
+    Name = "${var.rds_subnet_group_base_name}-${local.random_suffix}"
+  }
+}
+
+resource "aws_vpc" "rds" {
+  cidr_block           = var.rds_vpc_cidr
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  tags = {
+    Name = "${var.rds_vpc_base_name}-${local.random_suffix}"
+  }
+}
+
+resource "aws_internet_gateway" "rds" {
+  vpc_id = aws_vpc.rds.id
+
+  tags = {
+    Name = "${var.rds_igw_base_name}-${local.random_suffix}"
+  }
+}
+
+resource "aws_subnet" "rds_a" {
+  vpc_id                  = aws_vpc.rds.id
+  cidr_block              = var.rds_subnet_a_cidr
+  availability_zone       = var.rds_subnet_a_az
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "${var.rds_subnet_a_base_name}-${local.random_suffix}"
+  }
+}
+
+resource "aws_subnet" "rds_b" {
+  vpc_id                  = aws_vpc.rds.id
+  cidr_block              = var.rds_subnet_b_cidr
+  availability_zone       = var.rds_subnet_b_az
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "${var.rds_subnet_b_base_name}-${local.random_suffix}"
+  }
+}
+
+resource "aws_security_group" "rds" {
+  name        = "${var.rds_security_group_base_name}-${local.random_suffix}"
+  description = "Security group for RDS"
+  vpc_id      = aws_vpc.rds.id
+
+  ingress {
+    from_port   = var.rds_port
+    to_port     = var.rds_port
+    protocol    = "tcp"
+    cidr_blocks = [var.rds_allowed_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.rds_security_group_base_name}-${local.random_suffix}"
+  }
+}
+
+resource "aws_db_instance" "rds" {
+  identifier              = "${var.rds_identifier_base_name}-${local.random_suffix}"
+  allocated_storage       = var.rds_allocated_storage
+  engine                  = var.rds_engine
+  engine_version          = "8.0"
+  instance_class          = var.rds_instance_class
+  db_name                 = var.rds_db_name
+  username                = var.rds_username
+  password                = var.rds_password
+  port                    = var.rds_port
+  db_subnet_group_name    = aws_db_subnet_group.rds.id
+  vpc_security_group_ids  = [aws_security_group.rds.id]
+  publicly_accessible      = false
+  multi_az                = false
+  storage_encrypted       = true
+  skip_final_snapshot     = true
+  apply_immediately       = true
+  deletion_protection     = false
+
+  tags = {
+    Name = "${var.rds_identifier_base_name}-${local.random_suffix}"
+  }
 }
