@@ -61,3 +61,79 @@ output "output_data_s3_uri" {
 output "temp_data_s3_uri" {
   value = "s3://${aws_s3_bucket.output_bucket.bucket}/temp/"
 }
+
+output "rds_vpc_id" {
+  value = aws_vpc.rds_vpc.id
+}
+
+output "rds_vpc_arn" {
+  value = aws_vpc.rds_vpc.arn
+}
+
+output "rds_subnet_a_id" {
+  value = aws_subnet.rds_subnet_a.id
+}
+
+output "rds_subnet_a_arn" {
+  value = aws_subnet.rds_subnet_a.arn
+}
+
+output "rds_subnet_b_id" {
+  value = aws_subnet.rds_subnet_b.id
+}
+
+output "rds_subnet_b_arn" {
+  value = aws_subnet.rds_subnet_b.arn
+}
+
+output "rds_security_group_id" {
+  value = aws_security_group.rds.id
+}
+
+output "rds_security_group_arn" {
+  value = aws_security_group.rds.arn
+}
+
+output "rds_db_subnet_group_id" {
+  value = aws_db_subnet_group.rds.id
+}
+
+output "rds_db_subnet_group_arn" {
+  value = aws_db_subnet_group.rds.arn
+}
+
+output "rds_db_instance_address" {
+  value = aws_db_instance.rds.address
+}
+
+output "rds_db_instance_arn" {
+  value = aws_db_instance.rds.arn
+}
+
+output "rds_db_instance_endpoint" {
+  value = aws_db_instance.rds.endpoint
+}
+
+output "rds_db_instance_id" {
+  value = aws_db_instance.rds.id
+}
+
+output "rds_db_instance_resource_id" {
+  value = aws_db_instance.rds.resource_id
+}
+
+output "rds_db_instance_status" {
+  value = aws_db_instance.rds.status
+}
+
+output "rds_db_instance_port" {
+  value = aws_db_instance.rds.port
+}
+
+output "rds_db_instance_username" {
+  value = aws_db_instance.rds.username
+}
+
+output "rds_db_instance_db_name" {
+  value = aws_db_instance.rds.db_name
+}
